@@ -168,12 +168,16 @@ class PlnApp(App):
     def add_peer(self, username, exten, status, parent=None):
         if username in self.peers:
             w = self.peers[username]
+            prevstatus = status
         else:
             w = self.main.treeview1.add_node(TreeViewContact(username=username, status=status, exten=exten), parent)
             self.peers[username] = w
-            w.status = status
-        w.username_label.color = [1,0,0,1]
-        reactor.callLater(1, self.clear_widget, w)
+            prevstatus = w.status
+            if not prevstatus == status:
+                w.status = status
+        if not prevstatus == status:
+            w.username_label.color = [1,0,0,1]
+            reactor.callLater(1, self.clear_widget, w)
         return w
 
     def on_credit(self, credit_data):
