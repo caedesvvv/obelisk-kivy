@@ -18,12 +18,12 @@ Features:
 
 ## Running on Android:
 
- 1. Install kivy launchera
+ 1. Install kivy launcher
    - [tutorial] http://kivy.org/docs/installation/installation-android.html
    - [direct link] http://kivy.googlecode.com/files/KivyLauncher-1.7.1.0.apk
    - [google play] https://play.google.com/store/apps/details?id=org.kivy.pygame&hl=es
  2. Copy the application folder into your /sdcard/kivy/ folder.
- 3. Run with your launcher
+ 3. Run with launcher
 
 
 # Running on linux
