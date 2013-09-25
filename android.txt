@@ -1,0 +1,3 @@
+title=PLN
+author=Lorea Dev
+orientation=portrait
