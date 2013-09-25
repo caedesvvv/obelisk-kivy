@@ -16,6 +16,7 @@ Features:
  1. Kivy: http://kivy.org
  2. Twisted python: http://twistedmatrix.com
 
+On Debian or Ubuntu: apt-get install python-kivy python-twisted-web
 
 ## Running on Android:
 
@@ -32,4 +33,6 @@ Features:
  1. Install dependencies
  3. Run main.py
 
+---
 
+ -- unsystem dev
