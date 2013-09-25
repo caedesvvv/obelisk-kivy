@@ -9,6 +9,7 @@ Features:
  - Open dial pad with double click on contact
  - Show remaining credit
  - Transfer or create credit
+ - To actually call use csipsimple!
 
 ## Dependencies:
 
