@@ -26,24 +26,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.core.audio import SoundLoader
 import twisted.web.error
-import traceback
-
-# Android imports
-PythonActivity = False
-try:
-    import android
-    from jnius import autoclass
-    # from android import activity
-    # from android import runnable
-    Intent = autoclass('android.content.Intent')
-    PythonActivity = autoclass('org.renpy.android.PythonActivity')
-    Uri = autoclass('android.net.Uri')
-    droid = True
-except:
-    traceback.print_exc()
-
 
 # Application imports
+import droid
 import plncli
 import sseproto
 
@@ -154,13 +139,10 @@ class PlnApp(App):
 
     #@runnable.run_on_ui_thread
     def start_call(self, exten):
-        if not PythonActivity:
+        if not droid.available:
             return
         # python to java magic
-        intent = Intent(Intent.ACTION_DIAL)
-        self.uri = Uri.parse('csip:'+exten)
-        intent.setData(self.uri)
-        PythonActivity.mActivity.startActivity(intent)
+        droid.action_dial(exten)
 
     def import_peers(self, data):
         parent = None
@@ -235,7 +217,7 @@ class PlnApp(App):
         factory = sseproto.PlnClientFactory(plncli.cookies, self.got_event)
         self.connector = reactor.connectSSL('pbx.lorea.org', 443, factory, ssl.ClientContextFactory())
 
-        if PythonActivity:
+        if droid.available:
             #droid.vibrate(200)
             #droid.startActivity('Intent.ACTION_DIAL', "csip:0")
             self.show_status("Droid: " + str(credit_data['credit']))
