@@ -15,6 +15,7 @@ import kivy
 kivy.require('1.0.6')
 
 from os.path import join, dirname
+
 from kivy.app import App
 from kivy.logger import Logger
 from kivy.properties import StringProperty, ObjectProperty
@@ -25,29 +26,28 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.core.audio import SoundLoader
 import twisted.web.error
-#from kivy.uix.screenmanager import WipeTransition
 import traceback
 
-droid = False
+# Android imports
+PythonActivity = False
 try:
     import android
- #   from android import activity
     from jnius import autoclass
- #   from android import runnable
-    droid = True
+    # from android import activity
+    # from android import runnable
     Intent = autoclass('android.content.Intent')
     PythonActivity = autoclass('org.renpy.android.PythonActivity')
     Uri = autoclass('android.net.Uri')
+    droid = True
 except:
     traceback.print_exc()
-    droid = False
 
 
-import os
-
+# Application imports
 import plncli
 import sseproto
 
+# Menu
 jsondata = """ [{"type": "title", "title": "Credentials"},
                {"type": "string", "title": "User name", "desc": "user connecting", "section": "connection", "key": "user"},
                {"type": "bool", "title": "Save pass", "desc": "wether to save the password for next time", "section": "connection", "key": "save_pass"},
@@ -62,15 +62,13 @@ class TreeViewContact(TreeViewNode, BoxLayout):
     exten = StringProperty()
 
 class PlnApp(App):
-    #user_input = ObjectProperty(None)
-    #pass_input = ObjectProperty(None)
     peers = {}
     active = False
     connector = None
-    selected = None
     user = ""
     people = None
 
+    # Kivy configuration
     def build_settings(self, settings):
         settings.add_json_panel('Connection', self.config, data=jsondata)
 
@@ -95,9 +93,19 @@ class PlnApp(App):
         self.show_status("PLN - Obelisk")
         self.main.pass_input.text = self.config.get('connection', 'pass')
 
+    # Avoid getting killed on sleep
     def on_pause(self):
         return True
 
+    # Utility functions
+    def show_status(self, text):
+        self.root.credit_label.text = str(text)
+
+    def play(self):
+        self.sound = SoundLoader.load(os.path.join('sounds','KDE-Im-User-Auth.ogg'))
+        self.sound.play()
+
+    # Credit management
     def credit_error(self, failure):
         if failure.type == twisted.web.error.PageRedirect:
             # server needs a proper api...
@@ -127,29 +135,26 @@ class PlnApp(App):
         d.addCallback(self.credit_transfered)
         d.addErrback(self.credit_error)
 
-
-    def show_status(self, text):
-        self.root.credit_label.text = str(text)
-
+    # Peer list management
     def clear_widget(self, widget):
         widget.username_label.color = [1,1,1,1]
 
     def scroll_selected(self, event):
-        selected = None
-        if self.main.treeview1.selected_node:
-            if hasattr(self.main.treeview1.selected_node, 'exten_label'):
-                selected = self.main.treeview1.selected_node.exten_label.text
-                self.credit.destination_input.text = selected
+        selected_ext = None
+        selected_node = self.main.treeview1.selected_node
+        if selected_node:
+            if hasattr(selected_node, 'exten_label'):
+                selected_ext = selected_node.exten_label.text
+                self.credit.destination_input.text = selected_ext
             else:
                 # label.. toggle open
-                self.main.treeview1.toggle_node(self.main.treeview1.selected_node)
-        if event.is_double_tap and selected:
-            self.selected = selected
-            self.start_call(selected)
+                self.main.treeview1.toggle_node(selected_node)
+        if event.is_double_tap and selected_ext:
+            self.start_call(selected_ext)
 
     #@runnable.run_on_ui_thread
     def start_call(self, exten):
-        if not droid:
+        if not PythonActivity:
             return
         # python to java magic
         intent = Intent(Intent.ACTION_DIAL)
@@ -196,6 +201,7 @@ class PlnApp(App):
             self.show_status(credit)
             self.play()
 
+    # Event Handler
     def got_event(self, name, data):
         if name == 'disconnected':
             self.connection_failure()
@@ -212,29 +218,27 @@ class PlnApp(App):
             self.main.event_label.text = name
             print 'unhandled event', name
 
+    # Initial login
     def got_login(self, credit_data):
         if self.active == 2:
             return
         self.active = 2
         self.user = credit_data['user']
         self.is_admin = credit_data['admin']
-        print "is_admin", self.is_admin, self.user, credit_data
+
         if not self.is_admin:
             if self.credit.credit_button:
                 self.credit.credit_button.parent.remove_widget(self.credit.credit_button)
+
         self.show_status(credit_data['credit'])
 
         factory = sseproto.PlnClientFactory(plncli.cookies, self.got_event)
         self.connector = reactor.connectSSL('pbx.lorea.org', 443, factory, ssl.ClientContextFactory())
 
-        if droid:
+        if PythonActivity:
             #droid.vibrate(200)
             #droid.startActivity('Intent.ACTION_DIAL', "csip:0")
             self.show_status("Droid: " + str(credit_data['credit']))
-
-    def play(self):
-        self.sound = SoundLoader.load(os.path.join('sounds','KDE-Im-User-Auth.ogg'))
-        self.sound.play()
 
     def connection_failure(self, failure=None):
         print "Connection fail", failure
@@ -244,6 +248,7 @@ class PlnApp(App):
         self.show_status("Disconnected")
         self.active = False
 
+    # button callbacks
     def btn_pressed(self):
         if self.active:
             if self.connector:
